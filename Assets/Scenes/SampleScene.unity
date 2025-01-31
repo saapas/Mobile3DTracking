@@ -262,8 +262,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementSpeed: 10
-  tiltSensitivity: 2
-  gravityValue: 1.03
   rotationText: {fileID: 443860896}
 --- !u!54 &99542739
 Rigidbody:

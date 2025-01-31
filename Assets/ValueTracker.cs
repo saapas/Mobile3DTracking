@@ -9,14 +9,17 @@ public class IMUDataUpdater : MonoBehaviour
 
     void Start()
     {
-        // Enable the accelerometer
+        // Enable the gyroscope
         Input.gyro.enabled = true;
     }
 
     void Update()
     {
-        // Get accelerometer data
-        Vector3 accelerometerData = Input.acceleration;
+        // Get gravity data
+        Vector3 gravity = Input.gyro.gravity;
+        
+        // Get acceleration data
+        Vector3 acceleration = Input.gyro.userAcceleration;
 
         // Get gyroscope data
         Vector3 gyroscopeData = Input.gyro.rotationRate;
@@ -24,7 +27,8 @@ public class IMUDataUpdater : MonoBehaviour
         // Update the text with sensor data
         if (sensorDataText != null)
         {
-            sensorDataText.text = $"Accelerometer:\nX: {accelerometerData.x:F2}\nY: {accelerometerData.y:F2}\nZ: {accelerometerData.z:F2}\n\n" +
+            sensorDataText.text = $"Gravity: " + gravity + "\n" +
+                                  $"Acceleration: " + acceleration + "\n" +
                                   $"Gyroscope:\nX: {gyroscopeData.x:F2}\nY: {gyroscopeData.y:F2}\nZ: {gyroscopeData.z:F2}";
         }
     }
