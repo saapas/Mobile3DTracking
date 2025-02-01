@@ -52,7 +52,7 @@ public class PhoneRotation : MonoBehaviour
             Vector3 eulerRotation = adjustedAttitude.eulerAngles;
 
             // Apply the rotation to the Rigidbody
-            rb.rotation = Quaternion.Euler(eulerRotation);
+            transform.rotation = Quaternion.Euler(eulerRotation);
             //Display the rotation in the UI Text
             rotationText.text = "Rotation (Euler Angles):\n" +
                                 "X: " + eulerRotation.x.ToString("F2") + "\n" +
@@ -76,10 +76,12 @@ public class PhoneRotation : MonoBehaviour
 
             Vector3 linearVelocity = acceleration - gravity; // Remove gravity from acceleration
 
+            // Apply the threshold to remove noise
             linearVelocity.x = Mathf.Abs(linearVelocity.x) < threshold ? 0 : linearVelocity.x;
             linearVelocity.y = Mathf.Abs(linearVelocity.y) < threshold ? 0 : linearVelocity.y;
             linearVelocity.z = Mathf.Abs(linearVelocity.z) < threshold ? 0 : linearVelocity.z;
 
+            Vector3 worldLinearVelocity = transform.TransformDirection(linearVelocity); // Convert to world space
 
             // Display the linear velocity in the UI Text
             rotationText.text += "\nLinear Velocity:\n" +
@@ -87,7 +89,8 @@ public class PhoneRotation : MonoBehaviour
                                  "Y: " + linearVelocity.y.ToString("F2") + "\n" +
                                  "Z: " + linearVelocity.z.ToString("F2");
 
-            rb.linearVelocity = linearVelocity * movementSpeed;
+            // Apply the linear velocity to the Rigidbody
+            rb.linearVelocity = worldLinearVelocity * movementSpeed;
         }
     }
 }
