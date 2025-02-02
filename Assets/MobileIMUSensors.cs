@@ -48,7 +48,7 @@ public class PhoneRotation : MonoBehaviour
             // Convert the adjusted attitude to Euler angles
             Vector3 eulerRotation = gyroAttitude.eulerAngles;
 
-            // Apply the rotation to the Phone rb
+            // Apply the rotation to the Phone transform
             transform.rotation = Quaternion.Euler(eulerRotation);
 
             //Display the rotation in the UI Text
