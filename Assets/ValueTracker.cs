@@ -15,8 +15,6 @@ public class IMUDataUpdater : MonoBehaviour
 
     void Update()
     {
-        // Get gravity data
-        Vector3 gravity = Input.gyro.gravity;
         
         // Get acceleration data
         Vector3 acceleration = Input.gyro.userAcceleration;
@@ -27,8 +25,7 @@ public class IMUDataUpdater : MonoBehaviour
         // Update the text with sensor data
         if (sensorDataText != null)
         {
-            sensorDataText.text = $"Gravity: " + gravity + "\n" +
-                                  $"Acceleration: " + acceleration + "\n" +
+            sensorDataText.text = $"Acceleration: " + acceleration + "\n" +
                                   $"Gyroscope:\nX: {gyroscopeData.x:F2}\nY: {gyroscopeData.y:F2}\nZ: {gyroscopeData.z:F2}";
         }
     }

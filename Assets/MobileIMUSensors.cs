@@ -41,15 +41,12 @@ public class PhoneRotation : MonoBehaviour
             // Get the gyroscope attitude (rotation)
             Quaternion gyroAttitude = Input.gyro.attitude;
 
-            // Adjust the gyroscope attitude to align with Unity's coordinate system
-            Quaternion adjustedAttitude = new Quaternion(gyroAttitude.x, gyroAttitude.y, -gyroAttitude.z, -gyroAttitude.w);
-
             // Apply an additional rotation to make x=0 correspond to 90 degrees in Unity
             Quaternion rotationOffset = Quaternion.Euler(90, 0, 0);
-            adjustedAttitude = rotationOffset * adjustedAttitude;
+            gyroAttitude = rotationOffset * gyroAttitude;
 
             // Convert the adjusted attitude to Euler angles for easier understanding
-            Vector3 eulerRotation = adjustedAttitude.eulerAngles;
+            Vector3 eulerRotation = gyroAttitude.eulerAngles;
 
             // Apply the rotation to the Rigidbody
             transform.rotation = Quaternion.Euler(eulerRotation);
@@ -58,7 +55,7 @@ public class PhoneRotation : MonoBehaviour
                                 "X: " + eulerRotation.x.ToString("F2") + "\n" +
                                 "Y: " + eulerRotation.y.ToString("F2") + "\n" +
                                 "Z: " + eulerRotation.z.ToString("F2") + "\n" +
-                                "W: " + adjustedAttitude.w.ToString("F2");
+                                "W: " + gyroAttitude.w.ToString("F2");
             
             Vector3 gravity = Input.gyro.gravity; // Get the gravity vector
 
