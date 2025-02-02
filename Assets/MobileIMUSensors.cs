@@ -45,11 +45,12 @@ public class PhoneRotation : MonoBehaviour
             Quaternion rotationOffset = Quaternion.Euler(90, 0, 0);
             gyroAttitude = rotationOffset * gyroAttitude;
 
-            // Convert the adjusted attitude to Euler angles for easier understanding
+            // Convert the adjusted attitude to Euler angles
             Vector3 eulerRotation = gyroAttitude.eulerAngles;
 
-            // Apply the rotation to the Rigidbody
+            // Apply the rotation to the Phone rb
             transform.rotation = Quaternion.Euler(eulerRotation);
+
             //Display the rotation in the UI Text
             rotationText.text = "Rotation (Euler Angles):\n" +
                                 "X: " + eulerRotation.x.ToString("F2") + "\n" +
