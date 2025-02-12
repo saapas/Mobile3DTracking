@@ -22,15 +22,6 @@ public class PhoneRotation : MonoBehaviour
         {
             Debug.LogWarning("Gyroscope not supported on this device.");
         }
-        try
-        {
-            Input.compass.enabled = true; // Attempt to enable the compass
-            Debug.Log("Compass and Magnetic Field Sensor enabled.");
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning("Compass and Magnetic Field Sensor not supported on this device: " + e.Message);
-        }
 
         // Start the coroutine to wait before updating
         StartCoroutine(WaitBeforeUpdate());
@@ -55,23 +46,27 @@ public class PhoneRotation : MonoBehaviour
                 Quaternion rotationOffset = Quaternion.Euler(90, 0, 0);
                 gyroAttitude = rotationOffset * gyroAttitude;
 
+                // Smooth the rotation
                 float smoothingFactor = 0.1f;
                 Quaternion smoothedGyroAttitude = Quaternion.Slerp(transform.rotation, gyroAttitude, smoothingFactor);
                 transform.rotation = smoothedGyroAttitude;
 
+                // Get the Euler angles
                 Vector3 eulerRotation = smoothedGyroAttitude.eulerAngles;
 
                 //Display the rotation in the UI Text
                 rotationText.text = "Rotation:\n" + eulerRotation.ToString("F2");
 
-                // Get the gravity and acceleration
+                // Get the gravity, acceleration and deltatime
                 Vector3 gravity = Input.gyro.gravity;
                 Vector3 acceleration = Input.acceleration;
                 float time = Time.fixedDeltaTime;
 
+                // Calculate the linear acceleration
                 Vector3 linearAcceleration = acceleration - gravity;
 
-                float threshold = 0.05f; // Lower the threshold to detect smaller movements
+                // Remove small values
+                float threshold = 0.05f;
                 linearAcceleration.x = Mathf.Abs(linearAcceleration.x) < threshold ? 0 : linearAcceleration.x;
                 linearAcceleration.y = Mathf.Abs(linearAcceleration.y) < threshold ? 0 : linearAcceleration.y;
                 linearAcceleration.z = Mathf.Abs(linearAcceleration.z) < threshold ? 0 : linearAcceleration.z;
@@ -80,8 +75,8 @@ public class PhoneRotation : MonoBehaviour
                 float accelerationInMS2 = 9.81f;
                 linearAcceleration *= accelerationInMS2;
 
-                // Velocity and position
-                float dampingFactor = 0.95f; // Reduce damping for more movement
+                // Apply damping to the velocity
+                float dampingFactor = 0.95f;
                 velocity += linearAcceleration * time;
                 velocity *= dampingFactor;
 
@@ -92,9 +87,10 @@ public class PhoneRotation : MonoBehaviour
                     velocity = Vector3.zero;
                 }
 
+                // Calculate the position doesn't need += because Translate is relative to the current position
                 position = velocity * time;
 
-                // Translate the object
+                // Translate the object, so it moves in the direction of the velocity
                 transform.Translate(position);
 
                 // Display gravity
