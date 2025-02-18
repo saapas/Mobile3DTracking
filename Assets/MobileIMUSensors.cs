@@ -8,8 +8,10 @@ public class PhoneRotation : MonoBehaviour
 {
     public Text rotationText;
     private Vector3 velocity = Vector3.zero; // Initialize velocity
-    private Vector3 position = Vector3.zero; // Initialize position
+    private Vector3 displacement = Vector3.zero; // Initialize position
+    private Vector3 prevVelocity = Vector3.zero; // Initialize previous velocity
     public float waitTime = 1f; // Time to wait before starting Update
+    private Vector3 prevLinearAcceleration = Vector3.zero; // Initialize previous linear acceleration
 
     void Start()
     {
@@ -60,7 +62,7 @@ public class PhoneRotation : MonoBehaviour
                 // Get the gravity, acceleration and deltatime
                 Vector3 gravity = Input.gyro.gravity;
                 Vector3 acceleration = Input.acceleration;
-                float time = Time.fixedDeltaTime;
+                float time = Time.deltaTime;
 
                 // Calculate the linear acceleration
                 Vector3 linearAcceleration = acceleration - gravity;
@@ -72,12 +74,14 @@ public class PhoneRotation : MonoBehaviour
                 linearAcceleration.z = Mathf.Abs(linearAcceleration.z) < threshold ? 0 : linearAcceleration.z;
 
                 // Amplify acceleration for better sensitivity
-                float accelerationInMS2 = 9.81f;
+                float accelerationInMS2 = 98.1f;
                 linearAcceleration *= accelerationInMS2;
+
+                // Integrate acceleration to get velocity using the trapezoidal rule
+                velocity = prevVelocity + (linearAcceleration + prevLinearAcceleration) / 2 * time;
 
                 // Apply damping to the velocity
                 float dampingFactor = 0.95f;
-                velocity += linearAcceleration * time;
                 velocity *= dampingFactor;
 
                 // Reset velocity if it's too small
@@ -87,14 +91,18 @@ public class PhoneRotation : MonoBehaviour
                     velocity = Vector3.zero;
                 }
 
-                // Calculate the position doesn't need += because Translate is relative to the current position
-                position = velocity * time;
+                // Calculate the displacement using the trapezoidal rule
+                displacement = (velocity + prevVelocity) / 2 * time;
 
-                // Translate the object, so it moves in the direction of the velocity
-                transform.Translate(position);
+                // Translate the object using the displacement
+                transform.Translate(displacement);
+
+                // Update the previous values
+                prevVelocity = velocity;
+                prevLinearAcceleration = linearAcceleration;
 
                 // Display gravity
-                rotationText.text += "\nGravity:\n" + gravity.ToString("F2");
+                rotationText.text += "\nPosition:\n" + transform.position.ToString("F2");
 
                 // Display linear acceleration
                 rotationText.text += "\nLinear Acceleration:\n" + linearAcceleration.ToString("F2");
@@ -103,7 +111,7 @@ public class PhoneRotation : MonoBehaviour
                 rotationText.text += "\nLinear Velocity:\n" + velocity.ToString("F2");
 
                 // Display position
-                rotationText.text += "\nPosition:\n" + position.ToString("F2");
+                rotationText.text += "\nDisplacement:\n" + displacement.ToString("F2");
             }
 
             yield return null; // Wait for the next frame
