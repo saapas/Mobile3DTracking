@@ -30,7 +30,7 @@ public class StepDetector : MonoBehaviour
         // Calculate pitch from accelerometer (using trigonometry)
         float accelerometerPitch = Mathf.Atan2(-acceleration.x, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.z * acceleration.z));
 
-        // Get gyroscope data (angular velocity in degrees per second)
+        // Get gyroscope data (rotation rate in rad/s)
         float gyroPitch = -Input.gyro.rotationRateUnbiased.z;
 
         // Apply the complementary filter
