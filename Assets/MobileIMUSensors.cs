@@ -68,13 +68,9 @@ public class PhoneRotation : MonoBehaviour
                 //Display the rotation in the UI Text
                 rotationText.text = "Rotation:\n" + eulerRotation.ToString("F2");
 
-                // Get the gravity, acceleration and deltatime
-                Vector3 gravity = Input.gyro.gravity;
-                Vector3 acceleration = Input.acceleration;
+                // Get the linear acceleration and time
+                Vector3 linearAcceleration = Input.gyro.userAcceleration;
                 float time = Time.deltaTime;
-
-                // Calculate the linear acceleration
-                Vector3 linearAcceleration = acceleration - gravity;
 
                 // Remove small values
                 float threshold = 0.05f;
