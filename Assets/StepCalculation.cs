@@ -5,12 +5,12 @@ public class StepDetector : MonoBehaviour
 {
     public Text testText;
     // Complementary filter parameters
-    public float alpha = 0.98f; // Weight for gyroscope data (typically between 0.9 and 0.98)
+    private float alpha = 0.9f; // Weight for gyroscope data
     private float fusedPitch = 0.0f; // Fused pitch value
     private float fusedPitchMagnitude = 0.0f; // Fused pitch magnitude
 
     // Step detection parameters
-    public float pitchThreshold = 70f; // Threshold for detecting steps
+    private float pitchThreshold = 25f; // Threshold for detecting steps
     private float lastPitch = 0.0f;
     private bool isStepDetected = false;
     private int stepCount = 0;
@@ -42,7 +42,8 @@ public class StepDetector : MonoBehaviour
 
         testText.text = "Fused Pitch: " + smoothedPitch.ToString("F2") + 
         "\n" + "gyroPitchDelta: " + gyroPitch.ToString("F2") + "\n" + 
-        "accelerometerPitch: " + accelerometerPitch.ToString("F2");
+        "accelerometerPitch: " + accelerometerPitch.ToString("F2")+ "\n" +
+        "stepCount: " + stepCount;
                         
 
         // Use the fused pitch value for step detection
@@ -51,18 +52,20 @@ public class StepDetector : MonoBehaviour
 
     void DetectSteps(float pitch)
     {
-        // Check if the pitch value crosses the threshold
+        // Check if the pitch and magnitude value crosses the threshold, is less than the last pitch value and the time interval has passed
         if (pitch > pitchThreshold && pitch <= lastPitch && Time.time > stepInterval)
         {
+            Debug.Log("Pitch: " + pitch);
             if (!isStepDetected)
             {
                 stepCount++;
                 stepInterval = Time.time + 0.5f; // Reset the time interval
                 isStepDetected = true;
                 Debug.Log("Step count: " + stepCount);
+                Debug.Log("Pitch: " + pitch);
             }
         }
-        else if (pitch < pitchThreshold)
+        else
         {
             isStepDetected = false;
         }
