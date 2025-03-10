@@ -1,12 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
-using System.Collections.Generic;
-using System;
+
 
 public class PhoneRotation : MonoBehaviour
 {
-    public Text rotationText;
     private Vector3 velocity = Vector3.zero; // Initialize velocity
     private Vector3 displacement = Vector3.zero; // Initialize position
     private Vector3 prevVelocity = Vector3.zero; // Initialize previous velocity
@@ -24,8 +21,6 @@ public class PhoneRotation : MonoBehaviour
         {
             Debug.LogWarning("Gyroscope not supported on this device.");
         }
-
-        Input.compass.enabled = true;
 
         // Start the coroutine to wait before updating
         StartCoroutine(WaitBeforeUpdate());
@@ -50,26 +45,13 @@ public class PhoneRotation : MonoBehaviour
                 Quaternion rotationOffset = Quaternion.Euler(90, 0, 0);
                 gyroAttitude = rotationOffset * gyroAttitude;
 
-                // Get the compass heading (magnetic north)
-                float compassHeading = Input.compass.trueHeading; // Use trueHeading for geographic north
-                Quaternion compassRotation = Quaternion.Euler(0, compassHeading, 0);
-
-                // Combine gyroscope and compass rotations
-                Quaternion trueRotation = gyroAttitude * compassRotation;
-
                 // Smooth the rotation
                 float smoothingFactor = 0.1f;
-                Quaternion smoothedGyroAttitude = Quaternion.Slerp(transform.rotation, trueRotation, smoothingFactor);
+                Quaternion smoothedGyroAttitude = Quaternion.Slerp(transform.rotation, gyroAttitude, smoothingFactor);
                 transform.rotation = smoothedGyroAttitude;
 
-                // Get the Euler angles
-                Vector3 eulerRotation = smoothedGyroAttitude.eulerAngles;
-
-                //Display the rotation in the UI Text
-                rotationText.text = "Rotation:\n" + eulerRotation.ToString("F2");
-
                 // Get the linear acceleration and time
-                Vector3 linearAcceleration = Input.gyro.userAcceleration;
+                /* Vector3 linearAcceleration = Input.gyro.userAcceleration;
                 float time = Time.deltaTime;
 
                 // Remove small values
@@ -116,7 +98,7 @@ public class PhoneRotation : MonoBehaviour
                 rotationText.text += "\nLinear Velocity:\n" + velocity.ToString("F2");
 
                 // Display position
-                rotationText.text += "\nDisplacement:\n" + displacement.ToString("F2");
+                rotationText.text += "\nDisplacement:\n" + displacement.ToString("F2"); */
             }
 
             yield return null; // Wait for the next frame
