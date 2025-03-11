@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Unity.Collections;
 
 
 public class PhoneRotation : MonoBehaviour
@@ -12,16 +13,8 @@ public class PhoneRotation : MonoBehaviour
 
     void Start()
     {
-        // Enable the gyroscope and compass
-        if (SystemInfo.supportsGyroscope)
-        {
-            Input.gyro.enabled = true;
-        }
-        else
-        {
-            Debug.LogWarning("Gyroscope not supported on this device.");
-        }
-
+        Input.gyro.enabled = true;
+        Input.compass.enabled = true;
         // Start the coroutine to wait before updating
         StartCoroutine(WaitBeforeUpdate());
     }
@@ -36,71 +29,17 @@ public class PhoneRotation : MonoBehaviour
     {
         while (true)
         {
-            if (Input.gyro.enabled)
-            {
-                // Get the gyroscope attitude (rotation)
-                Quaternion gyroAttitude = Input.gyro.attitude;
+            // Get the gyroscope attitude (rotation)
+            Quaternion gyroAttitude = Input.gyro.attitude;
 
-                // Apply an additional rotation to make x=0 correspond to 90 degrees in Unity
-                Quaternion rotationOffset = Quaternion.Euler(90, 0, 0);
-                gyroAttitude = rotationOffset * gyroAttitude;
+            // Apply an additional rotation to make x=0 correspond to 90 degrees in Unity
+            Quaternion rotationOffset = Quaternion.Euler(90, 0, 0);
+            gyroAttitude = rotationOffset * gyroAttitude;
 
-                // Smooth the rotation
-                float smoothingFactor = 0.1f;
-                Quaternion smoothedGyroAttitude = Quaternion.Slerp(transform.rotation, gyroAttitude, smoothingFactor);
-                transform.rotation = smoothedGyroAttitude;
-
-                // Get the linear acceleration and time
-                /* Vector3 linearAcceleration = Input.gyro.userAcceleration;
-                float time = Time.deltaTime;
-
-                // Remove small values
-                float threshold = 0.05f;
-                linearAcceleration.x = Mathf.Abs(linearAcceleration.x) < threshold ? 0 : linearAcceleration.x;
-                linearAcceleration.y = Mathf.Abs(linearAcceleration.y) < threshold ? 0 : linearAcceleration.y;
-                linearAcceleration.z = Mathf.Abs(linearAcceleration.z) < threshold ? 0 : linearAcceleration.z;
-
-                // Amplify acceleration for better sensitivity
-                float accelerationInMS2 = 98.1f;
-                linearAcceleration *= accelerationInMS2;
-
-                // Integrate acceleration to get velocity using the trapezoidal rule
-                velocity = prevVelocity + (linearAcceleration + prevLinearAcceleration) / 2 * time;
-
-                // Apply damping to the velocity
-                float dampingFactor = 0.95f;
-                velocity *= dampingFactor;
-
-                // Reset velocity if it's too small
-                float resetThreshold = 0.1f;
-                if (velocity.magnitude < resetThreshold)
-                {
-                    velocity = Vector3.zero;
-                }
-
-                // Calculate the displacement using the trapezoidal rule
-                displacement = (velocity + prevVelocity) / 2 * time;
-
-                // Translate the object using the displacement
-                transform.Translate(displacement);
-
-                // Update the previous values
-                prevVelocity = velocity;
-                prevLinearAcceleration = linearAcceleration;
-
-                // Display gravity
-                rotationText.text += "\nPosition:\n" + transform.position.ToString("F2");
-
-                // Display linear acceleration
-                rotationText.text += "\nLinear Acceleration:\n" + linearAcceleration.ToString("F2");
-
-                // Display velocity
-                rotationText.text += "\nLinear Velocity:\n" + velocity.ToString("F2");
-
-                // Display position
-                rotationText.text += "\nDisplacement:\n" + displacement.ToString("F2"); */
-            }
-
+            // Smooth the rotation
+            float smoothingFactor = 0.1f;
+            Quaternion smoothedGyroAttitude = Quaternion.Slerp(transform.rotation, gyroAttitude, smoothingFactor);
+            transform.rotation = smoothedGyroAttitude;
             yield return null; // Wait for the next frame
         }
     }

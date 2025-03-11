@@ -9,7 +9,7 @@ public class StepDetector : MonoBehaviour
     public float fusedPitch = 0.0f; // Fused pitch value
 
     // Step detection parameters
-    private float pitchThreshold = 17f; // Threshold for detecting steps
+    private float pitchThreshold = 3f; // Threshold for detecting steps
     private float absPitch = 0.0f; // Absolute pitch value
     private float stepTime = 0.75f; // Time interval between steps
     private float stepLenght = 0.0f; // Step length
@@ -20,22 +20,25 @@ public class StepDetector : MonoBehaviour
     public static float smoothedPitch = 0.0f;
     private int stepType = 0; // 0 for flat, 1 for down and 2 for up
     private Vector3 acceleration;
+    public static float accelerationY;
 
     void Start()
     {
         Input.gyro.enabled = true;
+        Input.compass.enabled = true;
     }
 
     void Update()
     {
         // Get accelerometer data
         acceleration = Input.gyro.userAcceleration;
+        accelerationY = Input.acceleration.y;
 
         // Calculate pitch from accelerometer (using trigonometry)
-        float accelerometerPitch = Mathf.Atan2(-acceleration.x, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.z * acceleration.z));
+        float accelerometerPitch = Mathf.Atan2(-acceleration.z, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.x * acceleration.x));
 
         // Get gyroscope data (rotation rate in rad/s)
-        float gyroPitch = -Input.gyro.rotationRateUnbiased.z;
+        float gyroPitch = -Input.gyro.rotationRateUnbiased.x;
 
         // Apply the complementary filter
         fusedPitch = alpha * (fusedPitch + gyroPitch) + (1 - alpha) * accelerometerPitch;
@@ -63,11 +66,11 @@ public class StepDetector : MonoBehaviour
                 stepCount++;
                 stepInterval = Time.time + stepTime; // Reset the time interval
                 isStepDetected = true;
-                if (pitch < -25)
+                if (pitch > 8)
                 {
                     stepType = 2;
                 }
-                else if (pitch > 25)
+                else if (pitch < 4.5f)
                 {
                     stepType = 1;
                 }
