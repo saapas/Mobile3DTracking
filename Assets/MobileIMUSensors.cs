@@ -1,9 +1,8 @@
 using UnityEngine;
 using System.Collections;
-using Unity.Collections;
 
 
-public class PhoneRotation : MonoBehaviour
+public class PhoneRotation : MonoBehaviour // Class is not finished yet, has now unnecessary variables and methods that may be used in the future
 {
     private Vector3 velocity = Vector3.zero; // Initialize velocity
     private Vector3 displacement = Vector3.zero; // Initialize position

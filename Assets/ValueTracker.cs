@@ -1,9 +1,7 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.UI;
 
-public class IMUDataUpdater : MonoBehaviour
+public class IMUDataUpdater : MonoBehaviour // Class is used for updating the sensor data in the UI
 {
     public Text sensorDataText; // Reference to the Text UI element
 

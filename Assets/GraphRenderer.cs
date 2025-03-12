@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using System;
 
-public class RealtimeGraphRenderer : MonoBehaviour
+public class RealtimeGraphRenderer : MonoBehaviour // Class is used for the graph rendering, it was made with DeepSeek AI. 
+// May or may not end up in the final version of the project
 {
     public RectTransform graphContainer;
-    public Sprite pointSprite; // A small sprite for data points
+    public Sprite pointSprite;
     public Color lineColor = Color.white;
     public float lineThickness = 2f;
     public int maxDataPoints = 50; // Maximum number of points to display
@@ -28,14 +28,12 @@ public class RealtimeGraphRenderer : MonoBehaviour
 
     private void Start()
     {
-        // Example: Start adding data points in real-time
         InvokeRepeating("AddDataPoint", 0f, 0.1f); // Add a point every 0.1 seconds
     }
 
     private void AddDataPoint()
     {
-        // Example: Generate a random Y value for the new data point
-        float newValue = StepDetector.smoothedPitch; // Example range for Y values
+        float newValue = StepDetector.smoothedPitch; // Get the new Y-axis value
         float currentTime = Time.time; // Use the current time as the X-axis value
 
         // Add the new point to the queue
