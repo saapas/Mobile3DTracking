@@ -33,21 +33,16 @@ public class StepDetector : MonoBehaviour
     void Update()
     {
         float currentTime = Time.time;
-        float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
         // Get sensor data
         acceleration = Input.gyro.userAcceleration;
         float accelerometerPitch = Mathf.Atan2(-acceleration.z, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.x * acceleration.x));
         float gyroPitch = -Input.gyro.rotationRateUnbiased.x;
-        float gyroRoll = -Input.gyro.rotationRateUnbiased.y; // Heading change
 
         // Apply complementary filter for pitch estimation
         fusedPitch = alpha * (fusedPitch + gyroPitch) + (1 - alpha) * accelerometerPitch;
         smoothedPitch = Mathf.Lerp(smoothedPitch, fusedPitch, 0.1f);
-
-        // Integrate gyro yaw to estimate heading
-        estimatedHeading += gyroRoll * deltaTime; // Update heading in radians
 
         // Step detection
         DetectSteps(smoothedPitch, acceleration.magnitude);
@@ -103,8 +98,21 @@ public class StepDetector : MonoBehaviour
         // Get forward direction based on the GameObject's local space
         Vector3 movementDirection = playerObject.forward; // Moves relative to rotation
 
+        // Adjust vertical movement based on step type
+        if (stepType == 2) // Up (stairs or incline)
+        {
+            movementDirection.y = 0.5f; // Add some vertical movement
+        }
+        else if (stepType == 1) // Down (stairs or decline)
+        {
+            movementDirection.y = -0.5f; // Subtract some vertical movement
+        }
+        else // Flat ground
+        {
+            movementDirection.y = 0; // No vertical movement
+        }
+
         // Keep movement in the X-Z plane
-        movementDirection.y = 0;
         movementDirection.Normalize();
 
         // Final movement vector

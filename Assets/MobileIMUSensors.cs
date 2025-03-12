@@ -13,7 +13,6 @@ public class PhoneRotation : MonoBehaviour // Class is not finished yet, has now
     void Start()
     {
         Input.gyro.enabled = true;
-        Input.compass.enabled = true;
         // Start the coroutine to wait before updating
         StartCoroutine(WaitBeforeUpdate());
     }
