@@ -3,7 +3,7 @@ using UnityEngine;
 public class GyroHeading : MonoBehaviour
 {
     private Quaternion orientation; // Current orientation as a quaternion
-    public Transform playerObject; // The GameObject that moves (e.g., Player)
+    public Transform playerObject;
     private Vector3 compass;
 
     void Start()
@@ -38,7 +38,7 @@ public class GyroHeading : MonoBehaviour
         Quaternion deltaRotation = Quaternion.Euler(angularVelocity * Mathf.Rad2Deg * Time.deltaTime);
 
         // Update the orientation
-        orientation = orientation * deltaRotation;
+        orientation *= deltaRotation;
     }
 
     float CalculateHeading()
