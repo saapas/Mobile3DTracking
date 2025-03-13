@@ -29,7 +29,7 @@ public class GyroHeading : MonoBehaviour
 
         playerObject.rotation = Quaternion.Euler(0, heading * Mathf.Rad2Deg, 0);
 
-        Debug.Log("compass: " + compass);
+        //Debug.Log("compass: " + compass);
     }
 
     void UpdateOrientation(Vector3 angularVelocity)
