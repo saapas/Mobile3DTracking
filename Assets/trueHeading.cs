@@ -4,7 +4,7 @@ public class GyroHeading : MonoBehaviour
 {
     private Quaternion orientation; // Current orientation as a quaternion
     public Transform playerObject;
-    private Vector3 compass;
+    private float compass;
 
     void Start()
     {
@@ -19,7 +19,8 @@ public class GyroHeading : MonoBehaviour
         // Get gyroscope data (angular velocity in rad/s)
         Vector3 angularVelocity = Input.gyro.rotationRateUnbiased;
 
-        compass = Input.compass.rawVector;
+        compass = Input.compass.trueHeading;
+        Debug.Log("compass: " + compass);
 
         // Update the quaternion orientation using gyroscope data
         UpdateOrientation(angularVelocity);

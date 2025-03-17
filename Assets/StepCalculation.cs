@@ -92,14 +92,14 @@ public class StepDetector : MonoBehaviour
                 if (pitch > 13)
                 {
                     stepType = 2; // Up (stairs or incline)
-                    stepLength = 0.3f;
+                    stepLength = 0.5f;
                 }
                 else
                 {
                     if (peakAccZ - lowestAccZ < 12)
                     {
                         stepType = 1;
-                        stepLength = 0.3f;
+                        stepLength = 0.5f;
                     } 
                     else 
                     {
@@ -139,11 +139,11 @@ public class StepDetector : MonoBehaviour
         // Adjust vertical movement based on step type
         if (stepType == 2) // Up (stairs or incline)
         {
-            movementDirection.y = 0.2f; // Add some vertical movement
+            movementDirection.y = 0.5f; // Add some vertical movement
         }
         else if (stepType == 1) // Down (stairs or decline)
         {
-            movementDirection.y = -0.2f; // Subtract some vertical movement
+            movementDirection.y = -0.5f; // Subtract some vertical movement
         }
         else // Flat ground
         {
