@@ -92,17 +92,23 @@ public class StepDetector : MonoBehaviour
                 if (pitch > 13)
                 {
                     stepType = 2; // Up (stairs or incline)
+                    stepLength = 0.3f;
                 }
                 else
                 {
                     if (peakAccZ - lowestAccZ < 12)
                     {
                         stepType = 1;
-                    } else stepType = 0;
+                        stepLength = 0.3f;
+                    } 
+                    else 
+                    {
+                    stepType = 0;
+                    // Adjust step length dynamically
+                    stepLength = 0.5f + (pitch / 15.0f);
+                    }
                 }
 
-                // Adjust step length dynamically
-                stepLength = 0.5f + (pitch / 10.0f);
 
                 // Log the peak and lowest pitch for this step
                 Debug.Log($"Step {stepCount}: Peak accZ = {peakAccZ:F2}, Lowest accZ = {lowestAccZ:F2}, accZ Difference = {peakAccZ - lowestAccZ}");
@@ -133,11 +139,11 @@ public class StepDetector : MonoBehaviour
         // Adjust vertical movement based on step type
         if (stepType == 2) // Up (stairs or incline)
         {
-            movementDirection.y = 0.5f; // Add some vertical movement
+            movementDirection.y = 0.2f; // Add some vertical movement
         }
         else if (stepType == 1) // Down (stairs or decline)
         {
-            movementDirection.y = -0.5f; // Subtract some vertical movement
+            movementDirection.y = -0.2f; // Subtract some vertical movement
         }
         else // Flat ground
         {
