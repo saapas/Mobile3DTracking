@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,7 +9,7 @@ public class StepDetector : MonoBehaviour
 
     private float alpha = 0.9f; // Complementary filter weight
     private float fusedPitch = 0.0f; // Fused pitch value
-    private float pitchThreshold = 5f; // Step detection threshold
+    private float pitchThreshold = 4f; // Step detection threshold
     private float stepTime = 0.75f; // Time between steps
     private float stepLength = 0.7f; // Default step length
     private float lastPitch = 0.0f;
@@ -20,7 +21,6 @@ public class StepDetector : MonoBehaviour
     private Vector3 acceleration; // Accelerometer data
     private float accZ = 0f;
 
-    private float estimatedHeading = 0.0f; // Gyro-based heading estimation
     private float lastTime;
     private Vector3 currentPosition;
 
@@ -40,7 +40,7 @@ public class StepDetector : MonoBehaviour
         acceleration = Input.gyro.userAcceleration;
         float accelerometerPitch = Mathf.Atan2(-acceleration.z, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.x * acceleration.x));
         float gyroPitch = -Input.gyro.rotationRateUnbiased.x;
-        accZ = (acceleration.z / Input.gyro.gravity.y) * 10f;
+        accZ = acceleration.z * 10f;
 
         // Apply complementary filter for pitch estimation
         fusedPitch = alpha * (fusedPitch + gyroPitch) + (1 - alpha) * accelerometerPitch;
@@ -49,16 +49,12 @@ public class StepDetector : MonoBehaviour
         // Step detection
         DetectSteps(smoothedPitch, acceleration.magnitude);
 
-        // Apply rotation to the GameObject
-        playerObject.rotation = Quaternion.Euler(0, estimatedHeading * Mathf.Rad2Deg, 0);
-
         // Debugging
         debugText.text = $"Fused Pitch: {smoothedPitch:F2}\n" +
                          $"Gyro Pitch Delta: {gyroPitch:F2}\n" +
                          $"Step Count: {stepCount}\n" +
                          $"Step Type: {stepType}\n" +
-                         $"Step Length: {stepLength:F2}\n" +
-                         $"Heading: {estimatedHeading * Mathf.Rad2Deg:F2}°";
+                         $"Step Length: {stepLength:F2}";
     }
 
     private float peakPitch = float.MinValue;
@@ -68,8 +64,6 @@ public class StepDetector : MonoBehaviour
 
     void DetectSteps(float pitch, float accMagnitude)
     {
-        float absPitch = Mathf.Abs(pitch);
-
         // Track peak and lowest pitch within a step cycle
         if (pitch > peakPitch)
             peakPitch = pitch;
@@ -89,7 +83,7 @@ public class StepDetector : MonoBehaviour
                 isStepDetected = true;
 
                 // Determine step type based on pitch
-                if (pitch > 13)
+                if (pitch > 10)
                 {
                     stepType = 2; // Up (stairs or incline)
                     stepLength = 0.5f;
@@ -112,6 +106,7 @@ public class StepDetector : MonoBehaviour
 
                 // Log the peak and lowest pitch for this step
                 Debug.Log($"Step {stepCount}: Peak accZ = {peakAccZ:F2}, Lowest accZ = {lowestAccZ:F2}, accZ Difference = {peakAccZ - lowestAccZ}");
+                Debug.Log($"Peak pitc = {peakPitch:F2}, Lowest pitch = {lowestPitch:F2}, pitch Difference = {peakPitch - lowestPitch}");
 
                 MoveObject(stepLength, stepType);
 
@@ -127,7 +122,7 @@ public class StepDetector : MonoBehaviour
             isStepDetected = false;
         }
 
-        lastPitch = absPitch;
+        lastPitch = pitch;
     }
 
 

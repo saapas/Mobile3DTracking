@@ -7,6 +7,8 @@ public class GyroHeading : MonoBehaviour
     private Quaternion orientation; // Current orientation as a quaternion
     public Transform playerObject;
 
+    private float compassHeading;
+
     private float kalmanHeading;
     private float kalmanP;
     private float Q = 0.03f; // gyro drift
@@ -26,7 +28,6 @@ public class GyroHeading : MonoBehaviour
 
         // Store the initial compass heading as the offset
         headingOffset = Input.compass.trueHeading;
-        if (headingOffset > 180) headingOffset -= 360; // Convert to -180 to 180 range
     }
 
     void Update()
@@ -43,24 +44,24 @@ public class GyroHeading : MonoBehaviour
         // Calculate the heading from the quaternion and make it match the compass value by making it negative
         float heading = -CalculateHeading();
 
+        if (heading < 0) heading += 360;
+
         // Get "pitch" value to determine when to use compass (gravity vector)
         float pitch = Input.gyro.gravity.y;
 
         if (pitch > 0.75f && Input.compass.timestamp > 0)
         {
-            float compassHeading = Input.compass.trueHeading;
-
-            if (compassHeading > 180) compassHeading -= 360; // Convert to -180 to 180 range
-
-            //Check if compass works
-            Debug.Log(compassHeading);
+            compassHeading = Input.compass.trueHeading;
 
             //Kalman filter update
             float prediction = kalmanHeading;
             float predictionP = kalmanP + Q * Time.deltaTime;
 
+            // Normalize the difference between compass heading and predicted heading
+            float headingDifference = NormalizeAngle(compassHeading - prediction);
+
             float K = predictionP / (predictionP + R);
-            kalmanHeading = prediction + K * (compassHeading - prediction);
+            kalmanHeading = prediction + K * headingDifference;
             kalmanP = (1 - K) * predictionP;
 
             // Apply rotation
@@ -75,7 +76,8 @@ public class GyroHeading : MonoBehaviour
 
         text.text = $"heading: {heading:F2}\n" +
                     $"pitch: {pitch:F2}\n" +
-                    $"kalmanHeading: {kalmanHeading}\n";
+                    $"kalmanHeading: {kalmanHeading}\n" +
+                    $"compassHeading: {compassHeading}";
     }
 
     float CalculateHeading()
@@ -90,5 +92,12 @@ public class GyroHeading : MonoBehaviour
         float heading = Mathf.Atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3));
 
         return heading * Mathf.Rad2Deg;
+    }
+    // Helper function to normalize angles to the range [-180, 180]
+    float NormalizeAngle(float angle)
+    {
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
+        return angle;
     }
 }
