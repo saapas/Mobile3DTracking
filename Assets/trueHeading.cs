@@ -8,12 +8,14 @@ public class GyroHeading : MonoBehaviour
     public Transform playerObject;
 
     private float compassHeading;
+    private float previousTime;
 
     private float kalmanHeading;
     private float kalmanP;
-    private float Q = 0.03f; // gyro drift
-    private float R = 0.4f; // noise (compass)
-    private float headingOffset;
+    private float Q = 0.2f; // gyro drift
+    private float R = 0.1f; // noise (compass)
+    private float headingAfterOffset = 0.0f;
+    private float headingOffset = 0.0f;
 
     void Start()
     {
@@ -25,18 +27,12 @@ public class GyroHeading : MonoBehaviour
         //Initialize Kalman filter
         kalmanHeading = 0;
         kalmanP = Q;
-
-        // Store the initial compass heading as the offset
-        headingOffset = Input.compass.trueHeading;
     }
 
     void Update()
     {
         // Get gyroscope data
         Quaternion attitude = Input.gyro.attitude;
-
-        //Set offset based on compass heading
-        attitude = attitude * Quaternion.Euler(0, headingOffset, 0);
 
         // Update the quaternion orientation using gyroscope data
         orientation = attitude;
@@ -46,6 +42,11 @@ public class GyroHeading : MonoBehaviour
 
         if (heading < 0) heading += 360;
 
+        headingAfterOffset = heading - headingOffset;
+
+        if (headingAfterOffset < 0) headingAfterOffset += 360;
+        if (headingAfterOffset > 360) headingAfterOffset -= 360;
+
         // Get "pitch" value to determine when to use compass (gravity vector)
         float pitch = Input.gyro.gravity.y;
 
@@ -53,8 +54,15 @@ public class GyroHeading : MonoBehaviour
         {
             compassHeading = Input.compass.trueHeading;
 
+            if(Time.time - previousTime > 6)
+            {
+                headingOffset = compassHeading;
+                headingOffset = heading - headingOffset;
+                previousTime = Time.time;
+            }
+
             //Kalman filter update
-            float prediction = kalmanHeading;
+            float prediction = headingAfterOffset;
             float predictionP = kalmanP + Q * Time.deltaTime;
 
             // Normalize the difference between compass heading and predicted heading
@@ -63,18 +71,18 @@ public class GyroHeading : MonoBehaviour
             float K = predictionP / (predictionP + R);
             kalmanHeading = prediction + K * headingDifference;
             kalmanP = (1 - K) * predictionP;
-
-            // Apply rotation
-            playerObject.rotation = Quaternion.Euler(0, kalmanHeading, 0);
         }
         else
         {
             //switches to just heading
-            kalmanHeading = heading;
+            kalmanHeading = headingAfterOffset;
             kalmanP = Q * Time.deltaTime;
         }
 
-        text.text = $"heading: {heading:F2}\n" +
+        // Apply rotation
+        playerObject.rotation = Quaternion.Euler(0, kalmanHeading, 0);
+
+        text.text = $"heading: {headingAfterOffset:F2}\n" +
                     $"pitch: {pitch:F2}\n" +
                     $"kalmanHeading: {kalmanHeading}\n" +
                     $"compassHeading: {compassHeading}";
