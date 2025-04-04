@@ -1,43 +1,34 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Diagnostics;
 
 public class StepDetector : MonoBehaviour
 {
     public Text debugText; // UI text for debugging
     public Transform playerObject; // The GameObject that moves (e.g., Player)
 
-    private float alpha = 0.9f; // Complementary filter weight
+    private readonly float alpha = 0.9f; // Complementary filter weight
     private float fusedPitch = 0.0f; // Fused pitch value
-    private float pitchThreshold = -70f; // Step detection threshold
-    private float stepTime = 0.75f; // Time between steps
-    private float stepLength = 0.7f; // Default step length
-    private bool isStepDetected = false;
+    private readonly float pitchThreshold = 4f; // Step detection threshold
+    private readonly float stepTime = 0.75f; // Time between steps
+    private float stepLength;
     private int stepCount = 0;
     private float stepInterval = 0.0f; // Step timing
     public static float smoothedPitch = 0.0f; // Smoothed pitch
     private int stepType = 0; // 0 = flat, 1 = down, 2 = up
     private Vector3 acceleration; // Accelerometer data
 
-    Stopwatch stopwatch = new Stopwatch();
-    private double pitchIntegral;
-    private double lastIntegralTime;
+    private float lastPitch = 0.0f;
 
-    private float lastTime;
     private Vector3 currentPosition;
 
     void Start()
     {
         Input.gyro.enabled = true;
-        lastTime = Time.time;
         currentPosition = playerObject.position;
     }
 
     void Update()
     {
-        float currentTime = Time.time;
-        lastTime = currentTime;
-
         // Get sensor data
         acceleration = Input.gyro.userAcceleration;
         float accelerometerPitch = Mathf.Atan2(-acceleration.z, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.x * acceleration.x));
@@ -53,112 +44,48 @@ public class StepDetector : MonoBehaviour
         // Debugging
         debugText.text = $"Fused Pitch: {smoothedPitch:F2}\n" +
                          $"Gyro Pitch Delta: {gyroPitch:F2}\n" +
+                         $"Accelerometer Pitch: {accelerometerPitch:F2}\n" +
                          $"Step Count: {stepCount}\n" +
                          $"Step Type: {stepType}\n" +
                          $"Step Length: {stepLength:F2}";
     }
 
-    private double PositiveIntegral;
-    private double NegativeIntegral;
-    private int timer;
+    private float peakPitch = float.MinValue;
+    private float lowestPitch = float.MaxValue;
 
     void DetectSteps(float pitch, float accPitch)
     {
-        if (pitch > 0)
+        // Set highest and lowest pitch
+        if (pitch > peakPitch) peakPitch = pitch;
+        if (pitch < lowestPitch) lowestPitch = pitch;
+
+        // Check if pitch has crossed the threshold and is decreasing and has passed the time interval
+        if (pitch > pitchThreshold && pitch <= lastPitch && Time.time > stepInterval)
         {
-            if (timer == 0 || timer == 2)
+            stepCount++;
+            stepInterval = Time.time + stepTime; // Reset step timer
+            Debug.Log("peak" + peakPitch);
+            Debug.Log("Low" + lowestPitch);
+
+            // Determine step type based on pitch
+            if (peakPitch > 11)
             {
-                UnityEngine.Debug.Log("Neg" + NegativeIntegral);
-                pitchIntegral = 0;
-                stopwatch.Restart();
-                PitchIntegral(pitch);
-                PositiveIntegral = pitchIntegral;
-                timer = 1;
+                stepType = 2; // up
+                stepLength = 0.5f;
             }
             else
             {
-                if (stopwatch.Elapsed.TotalSeconds > 1)
-                {
-                    PositiveIntegral = 0;
-                }
-                else
-                {
-                    PitchIntegral(pitch);
-                    PositiveIntegral = pitchIntegral;
-                }
+                stepType = 0; // flat
+                stepLength = ((peakPitch-lowestPitch) / 30); // Dynamically adjust steplength
             }
+            // Reset highest and lowest pitch
+            peakPitch = float.MinValue;
+            lowestPitch = float.MaxValue;
+
+            MoveObject(stepLength, stepType);
         }
-        if (pitch < 0)
-        {
-            if (timer != 2)
-            {
-                UnityEngine.Debug.Log("Pos" + PositiveIntegral);
-                UnityEngine.Debug.Log("both" + (PositiveIntegral - NegativeIntegral)); 
-                pitchIntegral = 0;
-                stopwatch.Restart();
-                PitchIntegral(pitch);
-                NegativeIntegral = pitchIntegral;
-                timer = 2;
-            }
-            else
-            {
-                
-                if (stopwatch.Elapsed.TotalSeconds > 1)
-                {
-                    PositiveIntegral = 0;
-                }
-                else
-                {
-                    PitchIntegral(pitch);
-                    PositiveIntegral = pitchIntegral;
-                }
-            }
-        }
-
-        if (timer == 1 && NegativeIntegral < pitchThreshold && Time.time > stepInterval)
-        {
-            if (!isStepDetected)
-            {
-                stepCount++;
-                stepInterval = Time.time + stepTime; // Reset step timer
-                isStepDetected = true;
-
-                // Determine step type based on pitch
-                if (PositiveIntegral - NegativeIntegral > 170)
-                {
-                    stepType = 2; // flat
-                    stepLength = 0.5f + (pitch / 15.0f);
-                }
-                else
-                {
-                    if (PositiveIntegral > 39)
-                    {
-                        stepType = 1;
-                        stepLength = 0.5f;
-                    }
-                    else
-                    {
-                        stepType = 0;
-                        // Adjust step length dynamically
-                        stepLength = 0.5f;
-                    }
-                }
-
-                MoveObject(stepLength, stepType);
-
-            }
-        }
-        else
-        {
-            isStepDetected = false;
-        }
-    }
-
-    void PitchIntegral(float pitch)
-    {
-        pitchIntegral += pitch * lastIntegralTime - stopwatch.Elapsed.TotalSeconds;
-        lastIntegralTime = stopwatch.Elapsed.TotalSeconds;
-    }
+        lastPitch = pitch;
+    } 
 
     void MoveObject(float stepLength, int stepType)
     {

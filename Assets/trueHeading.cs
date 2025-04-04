@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GyroHeading : MonoBehaviour
+public class TrueHeading : MonoBehaviour
 {
     public Text text;
     private Quaternion orientation; // Current orientation as a quaternion
@@ -13,8 +13,8 @@ public class GyroHeading : MonoBehaviour
     List<float> compassBuffer = new List<float>();
     private float compassError;
     private float previousTime;
-    private float bias = 0.001f;
-    private float scaleErrorConst = 0.007f;
+    private readonly float bias = 0.001f;
+    private readonly float scaleErrorConst = 0.007f;
     private float scaleError;
     private float headingError;
 
@@ -46,6 +46,7 @@ public class GyroHeading : MonoBehaviour
 
         if (heading < 0) heading += 360;
 
+        // Setting the headingOffset to heading
         headingAfterOffset = heading - headingOffset;
 
         if (headingAfterOffset < 0) headingAfterOffset += 360;
@@ -56,6 +57,7 @@ public class GyroHeading : MonoBehaviour
 
         compassHeading = Input.compass.trueHeading;
 
+        //Adding new values to CompassBuffer, removing when count over 20
         if (compassBuffer.Count >= 20) compassBuffer.RemoveAt(0);
         compassBuffer.Add(compassHeading);
 
@@ -74,10 +76,16 @@ public class GyroHeading : MonoBehaviour
         }
         //Calculate Kalman Gain
         float kalmanG = headingError / (headingError + compassError);
+
+        // Calculate kalman heading based on previous heading, kalman gain and the difference between compass and previous gyro heading
         kalmanHeading = headingPrevEst + kalmanG * (NormalizeAngle(compassHeading - headingPrevEst));
 
+        // Calculating the kalman error
         stateEstimateError = (1 - kalmanG) * (headingError);
+
+        // Set new previous heading
         headingPrevEst = headingAfterOffset;
+
         // Apply rotation
         playerObject.rotation = Quaternion.Euler(0, kalmanHeading, 0);
 
@@ -91,14 +99,15 @@ public class GyroHeading : MonoBehaviour
     }
     float EstimateCompassError()
     {
+        // Estimating error based on variance of the latest values
         float mean = compassBuffer.Average();
-
         float sumOfSquares = compassBuffer.Sum(x => (x - mean) * (x - mean));
         compassError = sumOfSquares / compassBuffer.Count();
         return compassError;
     }
     float EstimateHeadingError()
     {
+        // Estimate error based on how long since last compass calibration and rotation magnitude.
         scaleError += scaleErrorConst * Input.gyro.rotationRateUnbiased.magnitude;
         headingError = (bias * (Time.time - previousTime)) + scaleError;
         return headingError;
