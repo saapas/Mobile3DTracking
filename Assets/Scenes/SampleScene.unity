@@ -1721,7 +1721,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1807778934}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d06b9ecdaddb6a47a036a78f2091e09, type: 3}
   m_Name: 
@@ -1730,7 +1730,7 @@ MonoBehaviour:
   pointSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   lineColor: {r: 1, g: 1, b: 1, a: 1}
   lineThickness: 2
-  maxDataPoints: 15
+  maxDataPoints: 5
   timeWindow: 10
   gridLinePrefab: {fileID: 2047289491650421561, guid: 0c64db6635a2cb94aa8cb44c11f53a77, type: 3}
   labelPrefab: {fileID: 7047480737455994916, guid: c1e0538eabe57b0458370bfb5c75d2ad, type: 3}

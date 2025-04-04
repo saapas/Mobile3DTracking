@@ -9,7 +9,7 @@ public class RealtimeGraphRenderer : MonoBehaviour // Class is used for the grap
     public Sprite pointSprite;
     public Color lineColor = Color.white;
     public float lineThickness = 2f;
-    public int maxDataPoints = 50; // Maximum number of points to display
+    public int maxDataPoints = 20; // Maximum number of points to display
     public float timeWindow = 10f; // Time window in seconds to display
 
     public GameObject gridLinePrefab; // Prefab for grid lines

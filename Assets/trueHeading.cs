@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,25 +10,27 @@ public class GyroHeading : MonoBehaviour
     public Transform playerObject;
 
     private float compassHeading;
+    List<float> compassBuffer = new List<float>();
+    private float compassError;
     private float previousTime;
+    private float bias = 0.001f;
+    private float scaleErrorConst = 0.007f;
+    private float scaleError;
+    private float headingError;
 
+    private float stateEstimateError;
     private float kalmanHeading;
-    private float kalmanP;
-    private float Q = 0.2f; // gyro drift
-    private float R = 0.1f; // noise (compass)
+    private float headingPrevEst;
     private float headingAfterOffset = 0.0f;
     private float headingOffset = 0.0f;
 
     void Start()
     {
-        // Enable the gyroscope
-        Input.gyro.enabled = true;
         orientation = Quaternion.identity; // Initialize orientation
         Input.compass.enabled = true;
 
         //Initialize Kalman filter
         kalmanHeading = 0;
-        kalmanP = Q;
     }
 
     void Update()
@@ -50,42 +54,54 @@ public class GyroHeading : MonoBehaviour
         // Get "pitch" value to determine when to use compass (gravity vector)
         float pitch = Input.gyro.gravity.y;
 
-        if (pitch > 0.75f && Input.compass.timestamp > 0)
+        compassHeading = Input.compass.trueHeading;
+
+        if (compassBuffer.Count >= 20) compassBuffer.RemoveAt(0);
+        compassBuffer.Add(compassHeading);
+
+        compassError = EstimateCompassError();
+
+        if (pitch < 0.75f) compassError = 10000;
+
+        headingError = EstimateHeadingError();
+
+        if (Time.time - previousTime > 10 && compassError < 2)
         {
-            compassHeading = Input.compass.trueHeading;
-
-            if(Time.time - previousTime > 6)
-            {
-                headingOffset = compassHeading;
-                headingOffset = heading - headingOffset;
-                previousTime = Time.time;
-            }
-
-            //Kalman filter update
-            float prediction = headingAfterOffset;
-            float predictionP = kalmanP + Q * Time.deltaTime;
-
-            // Normalize the difference between compass heading and predicted heading
-            float headingDifference = NormalizeAngle(compassHeading - prediction);
-
-            float K = predictionP / (predictionP + R);
-            kalmanHeading = prediction + K * headingDifference;
-            kalmanP = (1 - K) * predictionP;
+            headingOffset = compassHeading;
+            headingOffset = heading - headingOffset;
+            previousTime = Time.time;
+            scaleError = 0;
         }
-        else
-        {
-            //switches to just heading
-            kalmanHeading = headingAfterOffset;
-            kalmanP = Q * Time.deltaTime;
-        }
+        //Calculate Kalman Gain
+        float kalmanG = headingError / (headingError + compassError);
+        kalmanHeading = headingPrevEst + kalmanG * (NormalizeAngle(compassHeading - headingPrevEst));
 
+        stateEstimateError = (1 - kalmanG) * (headingError);
+        headingPrevEst = headingAfterOffset;
         // Apply rotation
         playerObject.rotation = Quaternion.Euler(0, kalmanHeading, 0);
 
         text.text = $"heading: {headingAfterOffset:F2}\n" +
                     $"pitch: {pitch:F2}\n" +
+                    $"kalmanError: {stateEstimateError:F2}\n" +
+                    $"compassError: {compassError:F2}\n" +
+                    $"headingError: {headingError:F2}\n" +
                     $"kalmanHeading: {kalmanHeading}\n" +
                     $"compassHeading: {compassHeading}";
+    }
+    float EstimateCompassError()
+    {
+        float mean = compassBuffer.Average();
+
+        float sumOfSquares = compassBuffer.Sum(x => (x - mean) * (x - mean));
+        compassError = sumOfSquares / compassBuffer.Count();
+        return compassError;
+    }
+    float EstimateHeadingError()
+    {
+        scaleError += scaleErrorConst * Input.gyro.rotationRateUnbiased.magnitude;
+        headingError = (bias * (Time.time - previousTime)) + scaleError;
+        return headingError;
     }
 
     float CalculateHeading()
