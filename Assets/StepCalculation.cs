@@ -6,18 +6,19 @@ public class StepDetector : MonoBehaviour
     public Text debugText; // UI text for debugging
     public Transform playerObject; // The GameObject that moves (e.g., Player)
 
-    private readonly float alpha = 0.9f; // Complementary filter weight
+    private readonly float alpha = 0.85f; // Complementary filter weight
     private float fusedPitch = 0.0f; // Fused pitch value
     private readonly float pitchThreshold = 4f; // Step detection threshold
     private readonly float stepTime = 0.75f; // Time between steps
     private float stepLength;
     private int stepCount = 0;
     private float stepInterval = 0.0f; // Step timing
-    public static float smoothedPitch = 0.0f; // Smoothed pitch
+    private float smoothedPitch = 0.0f; // Smoothed pitch
     private int stepType = 0; // 0 = flat, 1 = down, 2 = up
     private Vector3 acceleration; // Accelerometer data
 
     private float lastPitch = 0.0f;
+    private float attitudeLastPitch;
 
     private Vector3 currentPosition;
 
@@ -29,9 +30,16 @@ public class StepDetector : MonoBehaviour
 
     void Update()
     {
-        // Get sensor data
-        acceleration = Input.gyro.userAcceleration;
-        float accelerometerPitch = Mathf.Atan2(-acceleration.z, Mathf.Sqrt(acceleration.y * acceleration.y + acceleration.x * acceleration.x));
+        // Get linear Acceleration from accelrometer by substracting gravity vector.
+        acceleration = Input.acceleration - Input.gyro.gravity;
+
+        // Make so that the value stays between allowed values for Asin()
+        float clampedY = Mathf.Clamp(-acceleration.y, -1f, 1f);
+
+        // Calculate pitch from acceleromater data
+        float accelerometerPitch = Mathf.Asin(clampedY);
+
+        // Get pitch value from gyroscope
         float gyroPitch = -Input.gyro.rotationRateUnbiased.x;
 
         // Apply complementary filter for pitch estimation
@@ -68,15 +76,23 @@ public class StepDetector : MonoBehaviour
             Debug.Log("Low" + lowestPitch);
 
             // Determine step type based on pitch
-            if (peakPitch > 11)
+            if (peakPitch > 9.5f)
             {
                 stepType = 2; // up
                 stepLength = 0.5f;
             }
             else
             {
-                stepType = 0; // flat
-                stepLength = ((peakPitch-lowestPitch) / 30); // Dynamically adjust steplength
+                if (peakPitch + lowestPitch < 2 && lowestPitch < -3)
+                {
+                    stepType = 1;
+                    stepLength = 0.5f;
+                }
+                else
+                {
+                    stepType = 0;
+                    stepLength = ((peakPitch - lowestPitch) / 30); // Dynamically adjust steplength
+                }
             }
             // Reset highest and lowest pitch
             peakPitch = float.MinValue;

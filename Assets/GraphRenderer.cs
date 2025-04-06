@@ -33,7 +33,7 @@ public class RealtimeGraphRenderer : MonoBehaviour // Class is used for the grap
 
     private void AddDataPoint()
     {
-        float newValue = StepDetector.smoothedPitch; // Get the new Y-axis value
+        float newValue = 5; //StepDetector.smoothedPitch; // Get the new Y-axis value
         float currentTime = Time.time; // Use the current time as the X-axis value
 
         // Add the new point to the queue
