@@ -9,20 +9,15 @@ public class TrueHeading : MonoBehaviour
     private Quaternion orientation; // Current orientation as a quaternion
     public Transform playerObject;
 
-    private float compassHeading;
+    private float compassHeading = 0.0f;
     List<float> compassBuffer = new List<float>();
-    private float compassError;
-    private float previousTime;
-    private readonly float bias = 0.001f;
-    private readonly float scaleErrorConst = 0.007f;
-    private float scaleError;
-    private float headingError;
+    private float compassError = 0.0f;
+    private float predictedHeading = 0.0f;
 
-    private float stateEstimateError;
-    private float kalmanHeading;
-    private float headingPrevEst;
-    private float headingAfterOffset = 0.0f;
-    private float headingOffset = 0.0f;
+    private float stateEstimateError = 1.0f;
+    private float kalmanHeading = 0.0f;
+    private float gyroDeltaHeading= 0.0f;
+    private float gyroHeadingPrev = 0.0f;
 
     void Start()
     {
@@ -35,6 +30,7 @@ public class TrueHeading : MonoBehaviour
 
     void Update()
     {
+        // -- Gyro Prediction Step --
         // Get gyroscope data
         Quaternion attitude = Input.gyro.attitude;
 
@@ -42,75 +38,65 @@ public class TrueHeading : MonoBehaviour
         orientation = attitude;
 
         // Calculate the heading from the quaternion and make it match the compass value by making it negative
-        float heading = -CalculateHeading();
+        float gyroHeading = -CalculateHeading();
 
-        if (heading < 0) heading += 360;
+        // Add gyro error to state error
+        stateEstimateError += Time.deltaTime;
 
-        // Setting the headingOffset to heading
-        headingAfterOffset = heading - headingOffset;
+        // Compute delta from previous heading
+        gyroDeltaHeading = gyroHeading - gyroHeadingPrev;
 
-        if (headingAfterOffset < 0) headingAfterOffset += 360;
-        if (headingAfterOffset > 360) headingAfterOffset -= 360;
+        // Predict state using gyro (integrate delta)
+        predictedHeading = kalmanHeading + gyroDeltaHeading;
+        if (predictedHeading < 0) predictedHeading += 360;
+        if (predictedHeading > 360) predictedHeading -= 360;
+
+        // -- Compass Update Step --
+        // Get compass data
+        compassHeading = Input.compass.trueHeading;
 
         // Get "pitch" value to determine when to use compass (gravity vector)
         float pitch = Input.gyro.gravity.y;
-
-        compassHeading = Input.compass.trueHeading;
-
-        //Adding new values to CompassBuffer, removing when count over 20
-        if (compassBuffer.Count >= 20) compassBuffer.RemoveAt(0);
-        compassBuffer.Add(compassHeading);
-
-        compassError = EstimateCompassError();
-
         if (pitch < 0.75f) compassError = 10000;
+        else compassError = EstimateCompassError();
 
-        headingError = EstimateHeadingError();
+        // Calculate Kalman Gain
+        float kalmanG = stateEstimateError / (stateEstimateError + compassError);
 
-        if (Time.time - previousTime > 10 && compassError < 2)
-        {
-            headingOffset = compassHeading;
-            headingOffset = heading - headingOffset;
-            previousTime = Time.time;
-            scaleError = 0;
-        }
-        //Calculate Kalman Gain
-        float kalmanG = headingError / (headingError + compassError);
-
-        // Calculate kalman heading based on previous heading, kalman gain and the difference between compass and previous gyro heading
-        kalmanHeading = headingPrevEst + kalmanG * (NormalizeAngle(compassHeading - headingPrevEst));
+        // Calculate kalman heading based on prediction from gyroscope, kalman gain and the compass heading
+        kalmanHeading = predictedHeading + kalmanG * (NormalizeAngle(compassHeading - predictedHeading));
 
         // Calculating the kalman error
-        stateEstimateError = (1 - kalmanG) * (headingError);
+        stateEstimateError = (1 - kalmanG) * stateEstimateError;
 
-        // Set new previous heading
-        headingPrevEst = headingAfterOffset;
+        // set used gyro heading to previous heading
+        gyroHeadingPrev = gyroHeading;
 
         // Apply rotation
         playerObject.rotation = Quaternion.Euler(0, kalmanHeading, 0);
 
-        text.text = $"heading: {headingAfterOffset:F2}\n" +
+        text.text = $"heading: {gyroHeading:F2}\n" +
                     $"pitch: {pitch:F2}\n" +
                     $"kalmanError: {stateEstimateError:F2}\n" +
                     $"compassError: {compassError:F2}\n" +
-                    $"headingError: {headingError:F2}\n" +
+                    $"predictedHeading: {predictedHeading:F2}\n" +
                     $"kalmanHeading: {kalmanHeading}\n" +
                     $"compassHeading: {compassHeading}";
     }
     float EstimateCompassError()
     {
+        // Adding new values to CompassBuffer, removing when count over 20
+        if (compassBuffer.Count >= 20) compassBuffer.RemoveAt(0);
+        compassBuffer.Add(compassHeading);
+
+        if (compassBuffer.Count() < 2) return 1.0f; // Default Error
+
         // Estimating error based on variance of the latest values
         float mean = compassBuffer.Average();
         float sumOfSquares = compassBuffer.Sum(x => (x - mean) * (x - mean));
-        compassError = sumOfSquares / compassBuffer.Count();
-        return compassError;
-    }
-    float EstimateHeadingError()
-    {
-        // Estimate error based on how long since last compass calibration and rotation magnitude.
-        scaleError += scaleErrorConst * Input.gyro.rotationRateUnbiased.magnitude;
-        headingError = (bias * (Time.time - previousTime)) + scaleError;
-        return headingError;
+        float variance = sumOfSquares / compassBuffer.Count();
+
+        return variance + 0.01f;
     }
 
     float CalculateHeading()
