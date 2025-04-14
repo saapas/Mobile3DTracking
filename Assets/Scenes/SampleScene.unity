@@ -210,7 +210,6 @@ GameObject:
   - component: {fileID: 99542742}
   - component: {fileID: 99542741}
   - component: {fileID: 99542740}
-  - component: {fileID: 99542738}
   - component: {fileID: 99542746}
   - component: {fileID: 99542745}
   - component: {fileID: 99542747}
@@ -221,23 +220,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &99542738
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 99542737}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad57cbbd0a60a4d4eb0fc7d58262a2e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  velocity: {x: 0, y: 0, z: 0}
-  displacement: {x: 0, y: 0, z: 0}
-  prevVelocity: {x: 0, y: 0, z: 0}
-  waitTime: 1
-  prevLinearAcceleration: {x: 0, y: 0, z: 0}
 --- !u!65 &99542740
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -475,7 +457,6 @@ GameObject:
   - component: {fileID: 288572144}
   - component: {fileID: 288572143}
   - component: {fileID: 288572145}
-  - component: {fileID: 288572146}
   m_Layer: 0
   m_Name: PhoneMovement
   m_TagString: Untagged
@@ -526,18 +507,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   text: {fileID: 58105854}
   playerObject: {fileID: 288572144}
---- !u!114 &288572146
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 288572142}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f63d5221b138fbe41836edd9771a29c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -939,7 +908,6 @@ GameObject:
   - component: {fileID: 961265272}
   - component: {fileID: 961265271}
   - component: {fileID: 961265270}
-  - component: {fileID: 961265274}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1032,19 +1000,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &961265274
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 961265268}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c095e9ec82a06454d80a861260efa432, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sensorDataText: {fileID: 2042258221}
 --- !u!1 &1214078338
 GameObject:
   m_ObjectHideFlags: 0

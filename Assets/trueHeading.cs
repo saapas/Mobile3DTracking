@@ -92,8 +92,8 @@ public class TrueHeading : MonoBehaviour
         if (compassBuffer.Count() < 2) return 1.0f; // Default Error
 
         // Estimating error based on variance of the latest values
-        float mean = compassBuffer.Average();
-        float sumOfSquares = compassBuffer.Sum(x => (x - mean) * (x - mean));
+        float average = compassBuffer.Average();
+        float sumOfSquares = compassBuffer.Sum(x => (x - average) * (x - average));
         float variance = sumOfSquares / compassBuffer.Count();
 
         return variance + 0.01f;
