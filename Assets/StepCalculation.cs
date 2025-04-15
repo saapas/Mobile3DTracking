@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class StepDetector : MonoBehaviour
 {
@@ -21,9 +22,7 @@ public class StepDetector : MonoBehaviour
     List<float> peakList = new List<float>();
     List<float> lowList = new List<float>();
     List<float> gravityList = new List<float>();
-    private float peakAverage = 0;
-    private float lowAverage = 0;
-    private float gravityAverage = 0;
+    private float pitchVariance = 0.0f;
 
     private float lastPitch = 0.0f;
 
@@ -62,79 +61,96 @@ public class StepDetector : MonoBehaviour
                          $"Step Length: {stepLength:F2}";
     }
 
-    private float peakPitch = float.MinValue;
+    private float highestPitch = float.MinValue;
     private float lowestPitch = float.MaxValue;
-    private float lowGracity = float.MaxValue;
+    private float lowGravity = float.MaxValue;
 
     void DetectSteps(float pitch, float gravity)
     {
         // Set highest and lowest pitch
-        if (pitch > peakPitch) peakPitch = pitch;
+        if (pitch > highestPitch) highestPitch = pitch;
         if (pitch < lowestPitch) lowestPitch = pitch;
-        if (gravity < lowGracity) lowGracity = gravity;
+        if (gravity < lowGravity) lowGravity = gravity;
 
         // Check if pitch has crossed the threshold and is decreasing and has passed the time interval
         if (pitch > pitchThreshold && pitch <= lastPitch && Time.time > stepInterval)
         {
             stepCount += 2;
             stepInterval = Time.time + stepTime; // Reset step timer
-            peakList.Add(peakPitch);
-            lowList.Add(lowestPitch);
-            gravityList.Add(lowGracity);
+            pitchVariance = PitchVariance(highestPitch, lowestPitch);
 
-            if (stepCount > 50)
-            {
-                peakAverage = peakList.Average();
-                lowAverage = lowList.Average();
-                gravityAverage = gravityList.Average();
-                float sumOfSquares = peakList.Sum(x => (x - peakAverage) * (x - peakAverage));
-                float variance = sumOfSquares / peakList.Count();
-                float sumOfSquares2 = lowList.Sum(x => (x - lowAverage) * (x - lowAverage));
-                float variance2 = sumOfSquares2 / lowList.Count();
-                float sumOfSquares3 = gravityList.Sum(x => (x - gravityAverage) * (x - gravityAverage));
-                float variance3 = sumOfSquares3 / gravityList.Count();
-                Debug.Log("peakAverage " + peakAverage);
-                Debug.Log("peakVariance " + variance);
-                Debug.Log("LowAverage " + lowAverage);
-                Debug.Log("LowVariance " + variance2);
-                Debug.Log("gravityAverage " + gravityAverage);
-                Debug.Log("gravityVariance " + variance3);
-                /*suora 0.82, 0.040, 9.07, 0.76, -5.19, 0.85
-                  ylös 0.56, 0.02, 12, 0.7, -8, 0.57
-                  alas 0.72, 0.047, 8, 2.4, -4, 1.47 */
-            }
+            /*suora 0.82, 0.040, 9.07, 0.76, -5.19, 0.85
+            ylï¿½s 0.56, 0.02, 12, 0.7, -8, 0.57
+            alas 0.72, 0.047, 8, 2.4, -4, 1.47 */
 
-            Debug.Log("peakPitch " + peakPitch);
+            Debug.Log("peakPitch " + highestPitch);
             Debug.Log("LowPitch " + lowestPitch);
-            Debug.Log("Gravity " + lowGracity);
+            Debug.Log("Gravity " + lowGravity);
 
             // Determine step type based on pitch
-            if (peakPitch - lowestPitch > 16.5f)
+            if (lowGravity < 0.7f && highestPitch > 9.5f)
             {
-                stepType = 2; // up
+                stepType = 2; //up
                 stepLength = 0.5f;
+            }
+            if (lowGravity > 0.88f)
+            {
+                stepType = 0; //flat
+                stepLength = (highestPitch - lowestPitch) / 11;
             }
             else
             {
-                if (lowestPitch > -4.58f && peakPitch < 7.87f)
+                float gravityThreshold = ComputeGThreshold(pitchVariance);
+                if (lowGravity < gravityThreshold)
                 {
-                    stepType = 1;
+                    stepType = 1; // Down
                     stepLength = 0.5f;
                 }
                 else
                 {
-                    stepType = 0;
-                    stepLength = ((peakPitch - lowestPitch) / 11f); // Dynamically adjust steplength
+                    stepType = 0; //flat
+                    stepLength = (highestPitch - lowestPitch) / 11;
                 }
             }
             // Reset highest and lowest pitch
-            peakPitch = float.MinValue;
+            highestPitch = float.MinValue;
             lowestPitch = float.MaxValue;
-            lowGracity = float.MaxValue;
+            lowGravity = float.MaxValue;
 
             MoveObject(stepLength, stepType);
         }
         lastPitch = pitch;
+    }
+
+    float PitchVariance(float peakPitch, float lowPitch) 
+    {
+        if (peakList.Count() > 5) peakList.RemoveAt(0);
+        peakList.Add(peakPitch);
+
+        if (lowList.Count() > 5) lowList.RemoveAt(0);
+        lowList.Add(lowPitch);
+
+        float peakAverage = peakList.Average();
+        float lowAverage = lowList.Average();
+        float sumOfSquares = peakList.Sum(x => (x - peakAverage) * (x - peakAverage));
+        float variance = sumOfSquares / peakList.Count();
+        float sumOfSquares2 = lowList.Sum(x => (x - lowAverage) * (x - lowAverage));
+        float variance2 = sumOfSquares2 / lowList.Count();
+        Debug.Log("peakAverage " + peakAverage);
+        Debug.Log("peakVariance " + variance);
+        Debug.Log("LowAverage " + lowAverage);
+        Debug.Log("LowVariance " + variance2);
+        return variance + variance2;
+    }
+
+    float ComputeGThreshold(float variance)
+    {
+        float minVar = 0.3f;
+        float maxVar = 2.5f;
+
+        float threshold = Mathf.Clamp01((variance - minVar) / (maxVar - minVar));
+
+        return 0.78f + threshold * 0.1f;
     }
 
     void MoveObject(float stepLength, int stepType)
