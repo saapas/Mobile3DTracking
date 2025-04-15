@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 
 public class StepDetector : MonoBehaviour
 {
@@ -21,7 +20,6 @@ public class StepDetector : MonoBehaviour
     private Vector3 acceleration; // Accelerometer data
     List<float> peakList = new List<float>();
     List<float> lowList = new List<float>();
-    List<float> gravityList = new List<float>();
     private float pitchVariance = 0.0f;
 
     private float lastPitch = 0.0f;
@@ -87,20 +85,26 @@ public class StepDetector : MonoBehaviour
             Debug.Log("LowPitch " + lowestPitch);
             Debug.Log("Gravity " + lowGravity);
 
-            // Determine step type based on pitch
-            if (lowGravity < 0.7f && highestPitch > 9.5f)
+            // --Determine step type--
+            // Firstly detect if they are clear cases.
+            if (lowGravity < 0.7f && highestPitch > 8f)
             {
                 stepType = 2; //up
                 stepLength = 0.5f;
+                Debug.Log("0");
             }
-            if (lowGravity > 0.88f)
+            else if (lowGravity > 0.88f)
             {
                 stepType = 0; //flat
                 stepLength = (highestPitch - lowestPitch) / 11;
+                Debug.Log("1");
             }
-            else
+            else // For cases that are not so clear
             {
+                // Get the dynamic threshold
                 float gravityThreshold = ComputeGThreshold(pitchVariance);
+                Debug.Log("gravityThreshold" + gravityThreshold);
+
                 if (lowGravity < gravityThreshold)
                 {
                     stepType = 1; // Down
@@ -124,33 +128,38 @@ public class StepDetector : MonoBehaviour
 
     float PitchVariance(float peakPitch, float lowPitch) 
     {
+        // --Calculate variance of both high and low pitch--
+        // Keep list short so less calculating and faster reaction to change
         if (peakList.Count() > 5) peakList.RemoveAt(0);
         peakList.Add(peakPitch);
 
         if (lowList.Count() > 5) lowList.RemoveAt(0);
         lowList.Add(lowPitch);
 
+        // Calculating the average then variance for both
         float peakAverage = peakList.Average();
         float lowAverage = lowList.Average();
         float sumOfSquares = peakList.Sum(x => (x - peakAverage) * (x - peakAverage));
         float variance = sumOfSquares / peakList.Count();
         float sumOfSquares2 = lowList.Sum(x => (x - lowAverage) * (x - lowAverage));
         float variance2 = sumOfSquares2 / lowList.Count();
-        Debug.Log("peakAverage " + peakAverage);
-        Debug.Log("peakVariance " + variance);
-        Debug.Log("LowAverage " + lowAverage);
-        Debug.Log("LowVariance " + variance2);
+
+        // Sum them together to determine the variance of whole step
         return variance + variance2;
     }
 
     float ComputeGThreshold(float variance)
     {
+        // --Calculating dynamic threshold for gravitysensor--
+        // Based of variance if the variance is 0.3 or less it returns the minimum 0.83 and if it is 2.5 or higher it returns 0.9f
         float minVar = 0.3f;
         float maxVar = 2.5f;
 
         float threshold = Mathf.Clamp01((variance - minVar) / (maxVar - minVar));
 
-        return 0.78f + threshold * 0.1f;
+        // 0.83 is the minimum it will go. By changing it you can adjust the gap. 0.7 is the value that indicates how much it can grow.
+        // so with 0.83 and 0.7 the value will be between 0.83 - 0.90.
+        return 0.83f + threshold * 0.07f;
     }
 
     void MoveObject(float stepLength, int stepType)
