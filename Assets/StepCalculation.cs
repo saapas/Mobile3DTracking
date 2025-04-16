@@ -7,6 +7,7 @@ public class StepDetector : MonoBehaviour
 {
     public Text debugText; // UI text for debugging
     public Transform playerObject; // The GameObject that moves (e.g., Player)
+    private Vector3 currentPosition;
 
     private readonly float alpha = 0.85f; // Complementary filter weight
     private float fusedPitch = 0.0f; // Fused pitch value
@@ -18,13 +19,10 @@ public class StepDetector : MonoBehaviour
     private float smoothedPitch = 0.0f; // Smoothed pitch
     private int stepType = 0; // 0 = flat, 1 = down, 2 = up
     private Vector3 acceleration; // Accelerometer data
-    List<float> peakList = new List<float>();
-    List<float> lowList = new List<float>();
+    List<float> peakList = new List<float>(); // For calculating variance
+    List<float> lowList = new List<float>(); // For calculating variance
     private float pitchVariance = 0.0f;
-
     private float lastPitch = 0.0f;
-
-    private Vector3 currentPosition;
 
     void Start()
     {
@@ -37,13 +35,13 @@ public class StepDetector : MonoBehaviour
         // Get linear Acceleration from accelrometer by substracting gravity vector.
         acceleration = Input.acceleration - Input.gyro.gravity;
 
-        // Calculate pitch from acceleromater data
+        // Get the y component to act as "pitch"
         float accelerometerPitch = acceleration.y;
 
         // Get pitch value from gyroscope
         float gyroPitch = -Input.gyro.rotationRateUnbiased.x;
 
-        // Apply complementary filter for pitch estimation
+        // Apply complementary filter for sensor fusion
         fusedPitch = alpha * (fusedPitch + gyroPitch) + (1 - alpha) * accelerometerPitch;
         smoothedPitch = Mathf.Lerp(smoothedPitch, fusedPitch, 0.1f);
 
@@ -59,6 +57,7 @@ public class StepDetector : MonoBehaviour
                          $"Step Length: {stepLength:F2}";
     }
 
+    // Initialize values
     private float highestPitch = float.MinValue;
     private float lowestPitch = float.MaxValue;
     private float lowGravity = float.MaxValue;
@@ -75,7 +74,7 @@ public class StepDetector : MonoBehaviour
         {
             stepCount += 2;
             stepInterval = Time.time + stepTime; // Reset step timer
-            pitchVariance = PitchVariance(highestPitch, lowestPitch);
+            pitchVariance = PitchVariance(highestPitch, lowestPitch); // Calculate pitch variance
 
             /*suora 0.82, 0.040, 9.07, 0.76, -5.19, 0.85
             yl�s 0.56, 0.02, 12, 0.7, -8, 0.57
@@ -121,8 +120,10 @@ public class StepDetector : MonoBehaviour
             lowestPitch = float.MaxValue;
             lowGravity = float.MaxValue;
 
+            // Move the game object
             MoveObject(stepLength, stepType);
         }
+        // Set new last pitch
         lastPitch = pitch;
     }
 
@@ -168,11 +169,11 @@ public class StepDetector : MonoBehaviour
         Vector3 movementDirection = playerObject.forward; // Moves relative to rotation
 
         // Adjust vertical movement based on step type
-        if (stepType == 2) // Up (stairs or incline)
+        if (stepType == 2) // Up
         {
             movementDirection.y = 0.36f; // Add some vertical movement
         }
-        else if (stepType == 1) // Down (stairs or decline)
+        else if (stepType == 1) // Down 
         {
             movementDirection.y = -0.36f; // Subtract some vertical movement
         }
@@ -181,14 +182,14 @@ public class StepDetector : MonoBehaviour
             movementDirection.y = 0; // No vertical movement
         }
 
-        // Keep movement in the X-Z plane
+        // Normalize the vector before adding the length
         movementDirection.Normalize();
 
         // Final movement vector
         Vector3 movement = movementDirection * stepLength;
         currentPosition += movement;
 
-        // Smoothly move the player
+        // Move the player
         playerObject.position = currentPosition;
     }
 }
