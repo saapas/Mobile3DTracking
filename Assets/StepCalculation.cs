@@ -97,7 +97,7 @@ public class StepDetector : MonoBehaviour
             Debug.Log("peakPitch " + highestPitch);
             Debug.Log("LowPitch " + lowestPitch);
             Debug.Log("maxAccelerometer " + maxAcc);
-            Debug.Log("minAccelerometer " + maxAcc);
+            Debug.Log("minAccelerometer " + minAcc);
             Debug.Log("lowGravity" + lowGravity);
 
             // --Determine step type--
@@ -119,6 +119,7 @@ public class StepDetector : MonoBehaviour
                 stepLength = 0.5f;
                 Debug.Log("1");
             }
+
             // Reset highest and lowest pitch
             highestPitch = float.MinValue;
             lowestPitch = float.MaxValue;
