@@ -25,6 +25,8 @@ public class StepDetector : MonoBehaviour
     private Vector3 gravity;
     private float gravityPitch;
 
+    public ModelClassifier classifier;
+
     void Start()
     {
         Input.gyro.enabled = true;
@@ -100,24 +102,29 @@ public class StepDetector : MonoBehaviour
             Debug.Log("minAccelerometer " + minAcc);
             Debug.Log("lowGravity" + lowGravity);
 
-            // --Determine step type--
-            if (lowGravity < 0.7f)
+            // Predict step using ModelClassifier
+            float[] stepData = new float[5] {
+                highestPitch,
+                lowestPitch,
+                maxAcc,
+                minAcc,
+                lowGravity
+            };
+
+            // catch clear cases
+            if (lowGravity > 0.9f) 
             {
-                stepType = 2; //up
-                stepLength = 0.5f;
-                Debug.Log("2");
+                stepType = 0;
             }
-            else if (lowGravity > 0.88f)
+            else if (lowGravity < 0.7f) 
             {
-                stepType = 0; //flat
-                stepLength = (highestPitch - lowestPitch) / 3f;
-                Debug.Log("0");
+                stepType = 2;
             }
-            else
+
+            // run the model when not so clear
+            else 
             {
-                stepType = 1; // Down
-                stepLength = 0.5f;
-                Debug.Log("1");
+                stepType = classifier.PredictStep(stepData);
             }
 
             // Reset highest and lowest pitch
