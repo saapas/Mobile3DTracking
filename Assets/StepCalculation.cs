@@ -125,6 +125,7 @@ public class StepDetector : MonoBehaviour
             else 
             {
                 stepType = classifier.PredictStep(stepData);
+                if(stepType == 0) stepLength = (highestPitch - lowestPitch) / 11;
             }
 
             // Reset highest and lowest pitch
@@ -161,10 +162,12 @@ public class StepDetector : MonoBehaviour
         if (stepType == 2) // Up
         {
             movementDirection.y = 0.36f; // Add some vertical movement
+            stepLength = 0.5f;
         }
         else if (stepType == 1) // Down 
         {
             movementDirection.y = -0.36f; // Subtract some vertical movement
+            stepLength = 0.5f;
         }
         else // Flat ground
         {
