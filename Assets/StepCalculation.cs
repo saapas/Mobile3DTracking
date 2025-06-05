@@ -125,8 +125,9 @@ public class StepDetector : MonoBehaviour
             else 
             {
                 stepType = classifier.PredictStep(stepData);
-                if(stepType == 0) stepLength = (highestPitch - lowestPitch) / 11;
             }
+
+            if (stepType == 0) stepLength = (highestPitch - lowestPitch) / 3f;
 
             // Reset highest and lowest pitch
             highestPitch = float.MinValue;
@@ -162,12 +163,12 @@ public class StepDetector : MonoBehaviour
         if (stepType == 2) // Up
         {
             movementDirection.y = 0.36f; // Add some vertical movement
-            stepLength = 0.5f;
+            stepLength = 0.6f;
         }
         else if (stepType == 1) // Down 
         {
             movementDirection.y = -0.36f; // Subtract some vertical movement
-            stepLength = 0.5f;
+            stepLength = 0.6f;
         }
         else // Flat ground
         {
@@ -180,7 +181,7 @@ public class StepDetector : MonoBehaviour
         // Final movement vector
         Vector3 movement = movementDirection * stepLength;
         currentPosition += movement;
-
+        Debug.Log(stepLength);
         // Move the player
         playerObject.position = currentPosition;
     }
